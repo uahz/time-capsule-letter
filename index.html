@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+  <meta name="theme-color" content="#faf6ed">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/svg+xml" href="icon.svg">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <title>给未来写信 · Loomy</title>
+  <style>
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    :root{
+      --bg:#faf6ed;--bg-card:#fffdf7;--ink:#2a2826;--ink-s:#5a5650;--ink-l:#8a857d;
+      --line:#e8e0d0;--accent:#c8704a;--cin:#c8463a;--gold:#b8935a;
+    }
+    html,body{height:100%;overflow-x:hidden}
+    body{
+      font-family:"Noto Serif SC","Songti SC","STSong","PingFang SC",system-ui,serif;
+      background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;
+    }
+    body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+      background:radial-gradient(at 30% 15%,rgba(200,112,74,.04),transparent 60%),
+                 radial-gradient(at 70% 85%,rgba(184,147,90,.04),transparent 60%);}
+    button{font-family:inherit;cursor:pointer}
+    input,select,textarea{font-family:inherit;border:none;outline:none;resize:none;font-size:15px;color:var(--ink)}
+    .app{position:relative;z-index:1;max-width:560px;margin:0 auto;padding:44px 24px 64px;min-height:100vh}
+    hr{border:none;border-top:1px dashed var(--line);margin:0}
+
+    /* — Header — */
+    .header{text-align:center;margin-bottom:28px}
+    .header-brand{font-size:10px;letter-spacing:4px;color:var(--ink-l);opacity:.5;margin-bottom:12px}
+    .header h1{font-family:"STKaiti","KaiTi",serif;font-size:34px;font-weight:700;letter-spacing:6px;color:var(--ink)}
+    .header-sub{font-size:12px;color:var(--ink-s);letter-spacing:2px;margin-top:6px}
+
+    /* — Tabs — */
+    .tabs{display:flex;gap:0;margin-bottom:24px;border-bottom:1px solid var(--line)}
+    .tab{flex:1;text-align:center;padding:12px 0;font-size:13px;letter-spacing:3px;color:var(--ink-l);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s}
+    .tab.active{color:var(--ink);border-bottom-color:var(--accent);font-weight:600}
+    .panel{display:none;animation:fadeIn .35s ease}
+    .panel.active{display:block}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+    /* — Write Panel — */
+    .field{margin-bottom:16px}
+    .field-label{font-size:11px;color:var(--ink-l);letter-spacing:2px;margin-bottom:4px}
+    .row{display:flex;gap:12px}
+    .row>*{flex:1}
+    .date-input,select{
+      width:100%;padding:12px 14px;background:var(--bg-card);border:1px solid var(--line);
+      border-radius:8px;color:var(--ink);font-family:inherit;-webkit-appearance:none;transition:border-color .2s;
+    }
+    .date-input:focus,select:focus{border-color:var(--accent)}
+    .paper-area{
+      width:100%;min-height:220px;padding:24px;background:var(--bg-card);
+      border:1px solid var(--line);border-radius:8px;font-size:16px;
+      line-height:2;color:var(--ink);font-family:"STKaiti","KaiTi",serif;
+      transition:border-color .2s;
+      background-image:linear-gradient(transparent 31px,var(--line) 31px,var(--line) 32px,transparent 32px);
+      background-size:100% 32px;
+    }
+    .paper-area:focus{border-color:var(--accent)}
+    .paper-area::placeholder{color:var(--ink-l);font-style:italic}
+    .mood-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+    .mood{
+      font-size:20px;padding:6px 10px;border-radius:999px;background:var(--bg-card);
+      border:1px solid var(--line);cursor:pointer;transition:all .2s;line-height:1;touch-action:manipulation;
+    }
+    .mood.sel{background:var(--ink);border-color:var(--ink)}
+    .submit-btn{
+      width:100%;margin-top:20px;font-size:14px;letter-spacing:4px;padding:16px;
+      background:var(--ink);color:var(--bg);border:none;border-radius:999px;
+      cursor:pointer;box-shadow:0 8px 20px rgba(0,0,0,.12);
+      transition:all .25s;font-weight:500;touch-action:manipulation;
+    }
+    .submit-btn:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(0,0,0,.18)}
+    .submit-btn:active{transform:translateY(0)}
+
+    /* — Mailbox Panel — */
+    .mailbox-list{display:flex;flex-direction:column;gap:10px}
+    .mail{
+      background:var(--bg-card);border:1px solid var(--line);border-radius:8px;
+      padding:16px 18px;cursor:pointer;transition:all .2s;position:relative;
+    }
+    .mail:hover{border-color:var(--ink-s)}
+    .mail.status-sent{border-left:3px solid var(--accent)}
+    .mail.status-future{border-left:3px solid var(--gold)}
+    .mail-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+    .mail-date{font-size:11px;color:var(--ink-l);letter-spacing:1px}
+    .mail-badge{font-size:9px;letter-spacing:1px;padding:2px 8px;border-radius:999px;font-weight:500}
+    .badge-future{background:var(--gold);color:#fff}
+    .badge-now{background:var(--accent);color:#fff}
+    .mail-title{font-size:15px;font-weight:600;margin-bottom:4px}
+    .mail-preview{font-size:12px;color:var(--ink-s);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .mail-mood{position:absolute;top:14px;right:16px;font-size:24px}
+    .empty{text-align:center;padding:40px;color:var(--ink-l);font-size:13px;letter-spacing:2px}
+
+    /* — Preview Modal — */
+    .modal{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;padding:20px;pointer-events:none;opacity:0;transition:opacity .3s}
+    .modal.show{opacity:1;pointer-events:auto}
+    .modal-bg{position:absolute;inset:0;background:rgba(20,15,10,.55);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+    .modal-paper{
+      position:relative;max-width:440px;width:100%;background:var(--bg-card);
+      border-radius:8px;padding:36px 28px;box-shadow:0 16px 48px rgba(0,0,0,.22);
+      transform:scale(.9) translateY(20px);transition:transform .5s cubic-bezier(.34,1.4,.64,1);
+      max-height:80vh;overflow-y:auto;
+    }
+    .modal.show .modal-paper{transform:scale(1) translateY(0)}
+    .modal-close{position:absolute;top:12px;right:14px;background:none;border:none;font-size:22px;color:var(--ink-l);cursor:pointer;padding:4px 8px}
+    .modal-meta{font-size:11px;color:var(--ink-l);letter-spacing:2px;margin-bottom:16px}
+    .modal-body{font-family:"STKaiti","KaiTi",serif;font-size:17px;line-height:2;white-space:pre-wrap;color:var(--ink);margin-bottom:20px}
+    .modal-actions{display:flex;gap:8px;flex-wrap:wrap}
+    .modal-btn{
+      flex:1;min-width:80px;font-size:12px;letter-spacing:2px;padding:10px 12px;
+      background:transparent;border:1px solid var(--ink-s);color:var(--ink);
+      border-radius:999px;cursor:pointer;transition:all .2s;text-align:center;touch-action:manipulation;
+    }
+    .modal-btn.pri{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+    .modal-btn:hover{transform:translateY(-1px)}
+
+    .toast{position:fixed;bottom:40px;left:50%;transform:translateX(-50%);background:var(--ink);
+      color:var(--bg);padding:10px 24px;border-radius:999px;font-size:13px;
+      letter-spacing:2px;opacity:0;pointer-events:none;z-index:300;transition:opacity .3s;}
+    .toast.show{opacity:1}
+
+    .footer{margin-top:40px;text-align:center;font-size:10px;color:var(--ink-l);opacity:.5;letter-spacing:2px}
+
+    @media(max-width:380px){.app{padding:36px 14px 52px}.header h1{font-size:28px}.paper-area{min-height:180px;padding:18px;font-size:15px}.modal-paper{padding:28px 18px}}
+  </style>
+</head>
+<body>
+<div class="app">
+  <header class="header">
+    <div class="header-brand">L O O M Y</div>
+    <h1>给未来写信</h1>
+    <div class="header-sub">写一封信 · 设定一个日期 · 到那天提醒你打开</div>
+  </header>
+
+  <div class="tabs">
+    <div class="tab active" data-panel="write">✎ 写 信</div>
+    <div class="tab" data-panel="mailbox">✉ 信 筒</div>
+  </div>
+
+  <!-- Write Panel -->
+  <div class="panel active" id="panelWrite">
+    <div class="field">
+      <div class="field-label">信的名字</div>
+      <input class="date-input" placeholder="给 30 岁的自己 / 一年后打开 / 别忘了我爱过你…" id="letterTitle" maxlength="40">
+    </div>
+    <div class="row">
+      <div class="field"><div class="field-label">送达日期</div><input type="date" class="date-input" id="letterDate"></div>
+      <div class="field"><div class="field-label">大致时间</div><select id="letterTime"><option value="09:00">早上 9 点</option><option value="12:00">中午 12 点</option><option value="18:00">傍晚 6 点</option><option value="21:00">晚上 9 点</option><option value="00:00">午夜</option></select></div>
+    </div>
+    <div class="field">
+      <div class="field-label">信的内容</div>
+      <textarea class="paper-area" placeholder="亲爱的……&#10;&#10;展信佳。&#10;&#10;写下任何你想说的。" id="letterContent"></textarea>
+    </div>
+    <div class="field"><div class="field-label">此刻心情（选填）</div>
+      <div class="mood-row" id="moodRow">
+        <button class="mood" data-m="😊">😊</button><button class="mood" data-m="😢">😢</button>
+        <button class="mood" data-m="😤">😤</button><button class="mood" data-m="😌">😌</button>
+        <button class="mood" data-m="🥰">🥰</button><button class="mood" data-m="😴">😴</button>
+        <button class="mood" data-m="🌈">🌈</button><button class="mood" data-m="🌧">🌧</button>
+      </div>
+    </div>
+    <button class="submit-btn" id="submitBtn">封 好 · 投 进 信 筒</button>
+  </div>
+
+  <!-- Mailbox Panel -->
+  <div class="panel" id="panelMailbox">
+    <div class="mailbox-list" id="mailboxList"></div>
+    <div class="empty" id="mailboxEmpty">信筒还是空的 · 去写第一封吧 ✎</div>
+  </div>
+
+  <footer class="footer">落款 · Loomy 灵感口袋</footer>
+</div>
+
+<!-- Preview Modal -->
+<div class="modal" id="modal">
+  <div class="modal-bg" id="modalBg"></div>
+  <div class="modal-paper">
+    <button class="modal-close" id="modalClose">✕</button>
+    <div class="modal-meta" id="modalMeta"></div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-actions">
+      <button class="modal-btn pri" id="modalIcs">📅 导入日历</button>
+      <button class="modal-btn" id="modalCopy">📋 复 制</button>
+      <button class="modal-btn" id="modalTxt">📄 下 载</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ——— DOM ———
+const panelWrite=document.getElementById('panelWrite'),panelMailbox=document.getElementById('panelMailbox');
+const tabs=document.querySelectorAll('.tab');
+const submitBtn=document.getElementById('submitBtn');
+const modal=document.getElementById('modal'),modalBg=document.getElementById('modalBg'),modalClose=document.getElementById('modalClose');
+const modalMeta=document.getElementById('modalMeta'),modalBody=document.getElementById('modalBody');
+const modalIcs=document.getElementById('modalIcs'),modalCopy=document.getElementById('modalCopy'),modalTxt=document.getElementById('modalTxt');
+const mailboxList=document.getElementById('mailboxList'),mailboxEmpty=document.getElementById('mailboxEmpty');
+const toast=document.getElementById('toast');
+
+// ——— State ———
+let mood='😊',letters=[],currentLetter=null;
+
+// ——— Tabs ———
+tabs.forEach(t=>t.addEventListener('click',()=>{
+  tabs.forEach(b=>b.classList.remove('active'));t.classList.add('active');
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('panel'+t.dataset.panel.charAt(0).toUpperCase()+t.dataset.panel.slice(1)).classList.add('active');
+  if(t.dataset.panel==='mailbox')renderMailbox();
+}));
+
+// ——— Mood ———
+document.getElementById('moodRow').addEventListener('click',e=>{
+  const b=e.target.closest('.mood');if(!b)return;
+  document.querySelectorAll('#moodRow .mood').forEach(m=>m.classList.remove('sel'));
+  b.classList.add('sel');mood=b.dataset.m;
+});
+
+// ——— Toast ———
+let tt;function t(msg){clearTimeout(tt);toast.textContent=msg;toast.classList.add('show');tt=setTimeout(()=>toast.classList.remove('show'),1800)}
+
+// ——— Load ———
+try{letters=JSON.parse(localStorage.getItem('loomy-future-letter')||'[]')}catch(e){letters=[]}
+function save(){localStorage.setItem('loomy-future-letter',JSON.stringify(letters))}
+function isPast(d){return new Date(d)<=new Date()}
+
+// ——— Submit ———
+submitBtn.addEventListener('click',()=>{
+  const title=document.getElementById('letterTitle').value.trim()||'给未来的信';
+  const date=document.getElementById('letterDate').value;
+  const time=document.getElementById('letterTime').value;
+  const content=document.getElementById('letterContent').value.trim();
+  if(!date){t('请选择一个送达日期');return}
+  if(!content){t('信还没写呢 ✍️');return}
+  const deliverDate=date+'T'+time+':00';
+  const letter={id:Date.now(),title,date:deliverDate,content,mood,created:new Date().toISOString(),read:false};
+  letters.unshift(letter);if(letters.length>10)letters=letters.slice(0,10);
+  save();showPreview(letter);
+  // Reset
+  document.getElementById('letterTitle').value='';document.getElementById('letterDate').value='';document.getElementById('letterContent').value='';
+  document.querySelectorAll('#moodRow .mood').forEach(m=>m.classList.remove('sel'));
+  document.querySelector('#moodRow .mood').classList.add('sel');mood='😊';
+});
+
+// ——— ICal ———
+function genIcs(l){const d=l.date.replace(/-/g,'').replace(/:/g,'').replace(/T/g,'T').slice(0,15)+'00';
+  const endDate=d.slice(0,8)+String(parseInt(d.slice(9,11))+1).padStart(2,'0')+d.slice(11);
+  return `BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Loomy//FutureLetter//CN
+BEGIN:VEVENT
+DTSTART:${d}
+DTEND:${endDate}
+SUMMARY:📬 ${l.title}${l.mood||''}
+DESCRIPTION:${l.content.replace(/\n/g,'\\n')}
+BEGIN:VALARM
+TRIGGER:-PT30M
+ACTION:DISPLAY
+DESCRIPTION:⏰ 你有一封信到了 —— 「${l.title}」
+END:VALARM
+END:VEVENT
+END:VCALENDAR`}
+
+function downloadIcs(l){
+  const ics=genIcs(l);const b=new Blob([ics],{type:'text/calendar;charset=utf-8'});
+  const u=URL.createObjectURL(b);const a=document.createElement('a');
+  a.href=u;a.download=encodeURIComponent(l.title)+'.ics';
+  document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(u);
+  t('日历已下载 · 导入系统日历即可 ✓');
+}
+
+// ——— Preview ———
+function showPreview(l){
+  currentLetter=l;const d=new Date(l.date);
+  const dateStr=`${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日 · ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+  modalMeta.innerHTML=`${l.mood||''}  ${isPast(l.date)?'已抵达的信':'将在 '+dateStr+' 抵达'}`;
+  modalBody.textContent=l.content;modal.classList.add('show');
+}
+function hideModal(){modal.classList.remove('show')}
+modalBg.addEventListener('click',hideModal);modalClose.addEventListener('click',hideModal);
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&modal.classList.contains('show'))hideModal()});
+
+modalIcs.addEventListener('click',()=>{if(currentLetter)downloadIcs(currentLetter)});
+modalCopy.addEventListener('click',()=>{
+  if(!currentLetter)return;
+  const txt=`${currentLetter.title}\n${currentLetter.mood||''}\n\n${currentLetter.content}\n\n—— 来自 Loomy 给未来写信`;
+  if(navigator.clipboard?.writeText){navigator.clipboard.writeText(txt).then(()=>t('已复制 ✓'))}
+  else{const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);t('已复制 ✓')}
+});
+modalTxt.addEventListener('click',()=>{
+  if(!currentLetter)return;
+  const txt=`${currentLetter.title}\n${currentLetter.mood||''}\n\n${currentLetter.content}\n\n—— 来自 Loomy 给未来写信`;
+  const b=new Blob([txt],{type:'text/plain;charset=utf-8'});
+  const u=URL.createObjectURL(b);const a=document.createElement('a');
+  a.href=u;a.download=encodeURIComponent(currentLetter.title)+'.txt';
+  document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(u);
+  t('已下载 ✓');
+});
+
+// ——— Mailbox ———
+function renderMailbox(){
+  if(!letters.length){mailboxList.innerHTML='';mailboxEmpty.style.display='block';return}
+  mailboxEmpty.style.display='none';
+  mailboxList.innerHTML=letters.map((l,i)=>{
+    const past=isPast(l.date),d=new Date(l.date);
+    const ds=`${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`;
+    return `<div class="mail ${past?'status-sent':'status-future'}" data-idx="${i}">
+      <div class="mail-header"><span class="mail-date">${ds}</span><span class="mail-badge ${past?'badge-now':'badge-future'}">${past?'已抵达':'等待送达'}</span></div>
+      <div class="mail-title">${l.mood||''} ${l.title}</div>
+      <div class="mail-preview">${l.content.slice(0,80)}…</div>
+      <div class="mail-mood" style="font-size:20px">${l.mood||''}</div>
+    </div>`;
+  }).join('');
+}
+mailboxList.addEventListener('click',e=>{
+  const el=e.target.closest('.mail');if(!el)return;
+  showPreview(letters[parseInt(el.dataset.idx)]);
+});
+
+// ——— Init ———
+const tomorrow=new Date();tomorrow.setDate(tomorrow.getDate()+30);
+document.getElementById('letterDate').value=tomorrow.toISOString().slice(0,10);
+renderMailbox();
+</script>
+<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js')}</script>
+</body>
+</html>
